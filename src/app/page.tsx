@@ -13,17 +13,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OrderBy } from "unsplash-js";
+import { useDebounce } from "use-debounce";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const [sortBy, setSortBy] = useState("relevant");
 
   const { data, error } = useQuery({
-    queryKey: ["photos", searchQuery, sortBy],
+    queryKey: ["photos", debouncedSearchQuery, sortBy],
     queryFn: async () => {
-      if (searchQuery) {
+      if (debouncedSearchQuery) {
         const result = await unsplashApi.search.getPhotos({
-          query: searchQuery,
+          query: debouncedSearchQuery,
           perPage: 20,
           orderBy: sortBy === "latest" ? OrderBy.LATEST : "relevant",
         });
