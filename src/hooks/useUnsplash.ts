@@ -3,7 +3,12 @@ import unsplashApi from "@/lib/unsplash";
 import { Photos } from 'unsplash-js/dist/methods/search/types/response';
 import { ColorId, OrderBy } from 'unsplash-js';
 
-export function useUnsplashPhotos(query: string, sortBy: 'relevant' | 'latest', colorFilter: ColorId | null, perPage: number = 20) {
+export function useUnsplashPhotos(
+  query: string,
+  sortBy: 'relevant' | 'latest',
+  colorFilter: ColorId | null,
+  perPage: number = 20,
+) {
   return useInfiniteQuery<Photos, Error>({
     queryKey: ['unsplashPhotos', query, sortBy, colorFilter],
     queryFn: async ({ pageParam = 1 }) => {
