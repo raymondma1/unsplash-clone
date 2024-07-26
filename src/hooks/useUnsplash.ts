@@ -1,11 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import unsplashApi from "@/lib/unsplash";
 import { Photos } from 'unsplash-js/dist/methods/search/types/response';
-import { OrderBy } from 'unsplash-js';
+import { ColorId, OrderBy } from 'unsplash-js';
 
-export function useUnsplashPhotos(query: string, sortBy: 'relevant' | 'latest', perPage: number = 20) {
+export function useUnsplashPhotos(query: string, sortBy: 'relevant' | 'latest', colorFilter: ColorId | null, perPage: number = 20) {
   return useInfiniteQuery<Photos, Error>({
-    queryKey: ['unsplashPhotos', query, sortBy, perPage],
+    queryKey: ['unsplashPhotos', query, sortBy, colorFilter],
     queryFn: async ({ pageParam = 1 }) => {
       if (query) {
         const result = await unsplashApi.search.getPhotos({
@@ -13,6 +13,7 @@ export function useUnsplashPhotos(query: string, sortBy: 'relevant' | 'latest', 
           page: pageParam as number,
           perPage,
           orderBy: sortBy === 'latest' ? OrderBy.LATEST : 'relevant',
+          color: colorFilter || undefined,
         });
 
         if (!result.response) {
@@ -44,5 +45,6 @@ export function useUnsplashPhotos(query: string, sortBy: 'relevant' | 'latest', 
       return undefined;
     },
     initialPageParam: 1,
+    retry: false,
   });
 }
