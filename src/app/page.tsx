@@ -1,8 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
-import unsplashApi from "@/lib/unsplash";
 import { Suspense, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,33 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { OrderBy } from "unsplash-js";
+import { Button } from "@/components/ui/button";
 import { useDebounce } from "use-debounce";
+import { useUnsplashPhotos } from "@/hooks/useUnsplash";
+import { Loader2 as Loader } from "lucide-react";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-  const [sortBy, setSortBy] = useState("relevant");
+  const [sortBy, setSortBy] = useState<"relevant" | "latest">("relevant");
 
-  const { data, error } = useQuery({
-    queryKey: ["photos", debouncedSearchQuery, sortBy],
-    queryFn: async () => {
-      if (debouncedSearchQuery) {
-        const result = await unsplashApi.search.getPhotos({
-          query: debouncedSearchQuery,
-          perPage: 20,
-          orderBy: sortBy === "latest" ? OrderBy.LATEST : "relevant",
-        });
-        return result.response?.results;
-      } else {
-        const result = await unsplashApi.photos.list({
-          perPage: 20,
-          orderBy: sortBy === "latest" ? OrderBy.LATEST : OrderBy.POPULAR,
-        });
-        return result.response?.results;
-      }
-    },
-  });
+  const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useUnsplashPhotos(debouncedSearchQuery, sortBy);
 
   if (error) {
     throw error;
@@ -54,7 +37,10 @@ export default function Home() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-grow"
         />
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select
+          value={sortBy}
+          onValueChange={(value: "relevant" | "latest") => setSortBy(value)}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
@@ -66,22 +52,31 @@ export default function Home() {
       </div>
       <Suspense fallback={<p>Loading...</p>}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {data?.map((photo) => (
-            <div
-              key={photo.id}
-              className="rounded-lg overflow-hidden shadow-lg"
-            >
-              <Image
-                src={photo.urls.regular}
-                alt={photo.alt_description || "Unsplash photo"}
-                width={400}
-                height={300}
-                className="w-full h-64 object-cover"
-              />
-            </div>
-          ))}
+          {data?.pages.map((page) =>
+            page.results.map((photo) => (
+              <div
+                key={photo.id}
+                className="rounded-lg overflow-hidden shadow-lg"
+              >
+                <Image
+                  src={photo.urls.regular}
+                  alt={photo.alt_description || "Unsplash photo"}
+                  width={400}
+                  height={300}
+                  className="w-full h-64 object-cover"
+                />
+              </div>
+            ))
+          )}
         </div>
       </Suspense>
+      {hasNextPage && (
+        <div className="mt-8 flex justify-center">
+          <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? <Loader /> : "Load More"}{" "}
+          </Button>
+        </div>
+      )}
     </main>
   );
 }
