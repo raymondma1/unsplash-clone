@@ -14,14 +14,29 @@ import { Button } from "@/components/ui/button";
 import { useDebounce } from "use-debounce";
 import { useUnsplashPhotos } from "@/hooks/useUnsplash";
 import { Loader2 as Loader } from "lucide-react";
+import { ColorId } from "unsplash-js";
+
+const colorOptions: ColorId[] = [
+  "black",
+  "white",
+  "yellow",
+  "orange",
+  "red",
+  "purple",
+  "magenta",
+  "green",
+  "teal",
+  "blue",
+];
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+  const [colorFilter, setColorFilter] = useState<ColorId | null>(null);
   const [sortBy, setSortBy] = useState<"relevant" | "latest">("relevant");
 
   const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useUnsplashPhotos(debouncedSearchQuery, sortBy);
+    useUnsplashPhotos(debouncedSearchQuery, sortBy, colorFilter);
 
   if (error) {
     throw error;
@@ -50,6 +65,21 @@ export default function Home() {
           </SelectContent>
         </Select>
       </div>
+      {searchQuery && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          {colorOptions.map((color) => (
+            <Button
+              key={color}
+              onClick={() =>
+                setColorFilter(color === colorFilter ? null : color)
+              }
+              variant={color === colorFilter ? "default" : "outline"}
+            >
+              {color}
+            </Button>
+          ))}
+        </div>
+      )}
       <Suspense fallback={<p>Loading...</p>}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {data?.pages.map((page) =>
