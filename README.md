@@ -1,4 +1,4 @@
-Unsplash Clone
+Unsplash Clone (1.5 hours spent)
 
 ## Getting Started
 
